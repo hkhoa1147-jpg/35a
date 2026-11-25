@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng Ký Tài Khoản</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 440px;
+      background: #ffffff;
+      padding: 28px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #1e293b;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    input.invalid {
+      border-color: #dc2626;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin-bottom: 0;
+      font-weight: 400;
+      cursor: pointer;
+    }
+
+    .error-text {
+      display: block;
+      color: #dc2626;
+      font-size: 0.82rem;
+      margin-top: 4px;
+      min-height: 16px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background-color: #2563eb;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 4px;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #1d4ed8;
+    }
+
+    .success-banner {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 14px;
+      background-color: #dcfce7;
+      border: 1px solid #86efac;
+      color: #166534;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    /* Responsive cho màn hình nhỏ (điện thoại) */
+    @media (max-width: 480px) {
+      .form-container {
+        padding: 20px 16px;
+      }
+
+      h1 {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h1>Đăng Ký Tài Khoản</h1>
+
+    <!-- Dùng novalidate để kiểm soát hoàn toàn thông báo lỗi bằng JavaScript -->
+    <form id="registerForm" novalidate>
+      <div class="form-group">
+        <label for="fullName">Họ và tên</label>
+        <input type="text" id="fullName" placeholder="Nhập họ và tên..." />
+        <span class="error-text" id="nameError"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="example@domain.com" />
+        <span class="error-text" id="emailError"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mật khẩu</label>
+        <input type="password" id="password" placeholder="Tối thiểu 8 ký tự (Hoa, thường, số)" />
+        <span class="error-text" id="passwordError"></span>
+      </div>
+
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="agreeTerms" />
+          <label for="agreeTerms">Tôi đồng ý với điều khoản sử dụng</label>
+        </div>
+        <span class="error-text" id="termsError"></span>
+      </div>
+
+      <button type="submit">Đăng ký</button>
+    </form>
+
+    <div id="successBanner" class="success-banner"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("registerForm");
+    const fullNameInput = document.getElementById("fullName");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const agreeTermsInput = document.getElementById("agreeTerms");
+
+    const nameError = document.getElementById("nameError");
+    const emailError = document.getElementById("emailError");
+    const passwordError = document.getElementById("passwordError");
+    const termsError = document.getElementById("termsError");
+    const successBanner = document.getElementById("successBanner");
+
+    // Hàm băm mật khẩu bằng Web Crypto API (SHA-256)
+    async function hashPassword(plainPassword) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(plainPassword);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function setFieldError(inputEl, errorEl, message) {
+      errorEl.textContent = message;
+      if (message) {
+        inputEl.classList.add("invalid");
+      } else {
+        inputEl.classList.remove("invalid");
+      }
+    }
+
+    function validateForm() {
+      let isValid = true;
+
+      // 1. Kiểm tra tên
+      const nameVal = fullNameInput.value.trim();
+      if (nameVal === "") {
+        setFieldError(fullNameInput, nameError, "Vui lòng nhập họ và tên.");
+        isValid = false;
+      } else {
+        setFieldError(fullNameInput, nameError, "");
+      }
+
+      // 2. Kiểm tra định dạng email
+      const emailVal = emailInput.value.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailVal)) {
+        setFieldError(emailInput, emailError, "Email không đúng định dạng (ví dụ: ten@gmail.com).");
+        isValid = false;
+      } else {
+        setFieldError(emailInput, emailError, "");
+      }
+
+      // 3. Kiểm tra mật khẩu: >= 8 ký tự, ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số
+      const passVal = passwordInput.value;
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+      if (!passwordRegex.test(passVal)) {
+        setFieldError(
+          passwordInput,
+          passwordError,
+          "Mật khẩu phải từ 8 ký tự trở lên, gồm chữ hoa, chữ thường và số."
+        );
+        isValid = false;
+      } else {
+        setFieldError(passwordInput, passwordError, "");
+      }
+
+      // 4. Kiểm tra checkbox điều khoản
+      if (!agreeTermsInput.checked) {
+        termsError.textContent = "Bạn cần đồng ý với điều khoản để tiếp tục.";
+        isValid = false;
+      } else {
+        termsError.textContent = "";
+      }
+
+      return isValid;
+    }
+
+    // Xử lý sự kiện submit
+    form.addEventListener("submit", async (event) => {
+      // Ngăn trình duyệt tải lại trang mặc định
+      event.preventDefault();
+      successBanner.style.display = "none";
+
+      if (!validateForm()) {
+        return;
+      }
+
+      const name = fullNameInput.value.trim();
+      const email = emailInput.value.trim().toLowerCase();
+      const passwordHash = await hashPassword(passwordInput.value);
+
+      // Lấy danh sách người dùng hiện có trong LocalStorage (nếu có)
+      const existingUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]");
+
+      // Kiểm tra trùng email
+      if (existingUsers.some((u) => u.email === email)) {
+        setFieldError(emailInput, emailError, "Email này đã được đăng ký trước đó.");
+        return;
+      }
+
+      const newUser = {
+        id: Date.now(),
+        name,
+        email,
+        passwordHash, // Không lưu mật khẩu gốc (plain text)
+        createdAt: new Date().toISOString()
+      };
+
+      existingUsers.push(newUser);
+      localStorage.setItem("registeredUsers", JSON.stringify(existingUsers));
+
+      // Hiển thị thông báo thành công an toàn bằng textContent
+      successBanner.textContent = `Đăng ký thành công! Chào mừng ${name} (${email}).`;
+      successBanner.style.display = "block";
+
+      form.reset();
+    });
+  </script>
+</body>
+</html>
